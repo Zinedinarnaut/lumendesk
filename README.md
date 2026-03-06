@@ -148,6 +148,14 @@ If `pack.json` is missing, video files in the repo are auto-discovered.
 - Your marketplace backend should verify the Apple identity token server-side against Apple's public keys before accepting uploads.
 - With a paid Apple Developer account, use your own bundle ID/team and keep the Sign in with Apple capability enabled.
 
+## License
+
+This project is licensed under the MIT License (see [LICENSE](LICENSE)).
+
+In plain language: you can use, modify, and distribute this code, including for commercial projects.
+
+Please keep the MIT copyright/license notice, and do not misrepresent the original authorship.
+
 ## Notes
 
 - This implementation avoids private APIs.
