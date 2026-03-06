@@ -14,6 +14,7 @@ final class AudioReactiveService: ObservableObject {
     private var decayTimer: Timer?
     private var levelHistory: [Double] = []
     private var lastBeatTimestamp: TimeInterval = 0
+    private var lastDispatchTimestamp: TimeInterval = 0
 
     private var isEnabled = false
     private var sensitivity: Double = 1.0
@@ -74,11 +75,12 @@ final class AudioReactiveService: ObservableObject {
         }
 
         inputNode.removeTap(onBus: 0)
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+        inputNode.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
             self?.processAudioBuffer(buffer)
         }
 
         do {
+            engine.prepare()
             try engine.start()
             isRunning = true
             permissionDenied = false
@@ -96,6 +98,7 @@ final class AudioReactiveService: ObservableObject {
         isRunning = false
         beatPulse = 0
         level = 0
+        lastDispatchTimestamp = 0
         levelHistory.removeAll(keepingCapacity: false)
         decayTimer?.invalidate()
         decayTimer = nil
@@ -119,21 +122,30 @@ final class AudioReactiveService: ObservableObject {
         guard let channels = buffer.floatChannelData else { return }
 
         let frameCount = Int(buffer.frameLength)
-        let channelCount = Int(buffer.format.channelCount)
-        guard frameCount > 0, channelCount > 0 else { return }
+        guard frameCount > 0 else { return }
 
+        // Keep callback work minimal to avoid CoreAudio overload cycles.
+        let primaryChannel = channels[0]
+        let sampleStride = max(1, frameCount / 256)
         var sumSquares = 0.0
-        for channelIndex in 0..<channelCount {
-            let channel = channels[channelIndex]
-            for sampleIndex in 0..<frameCount {
-                let sample = Double(channel[sampleIndex])
-                sumSquares += sample * sample
-            }
+        var sampledCount = 0
+        for sampleIndex in Swift.stride(from: 0, to: frameCount, by: sampleStride) {
+            let sample = Double(primaryChannel[sampleIndex])
+            sumSquares += sample * sample
+            sampledCount += 1
         }
+        guard sampledCount > 0 else { return }
 
-        let meanSquare = sumSquares / Double(frameCount * channelCount)
+        let meanSquare = sumSquares / Double(sampledCount)
         let rms = sqrt(meanSquare)
         let normalized = min(1.0, max(0.0, rms * 22.0))
+        let now = CACurrentMediaTime()
+
+        // Publish to main actor at a capped rate.
+        guard now - lastDispatchTimestamp >= (1.0 / 24.0) else {
+            return
+        }
+        lastDispatchTimestamp = now
 
         Task { @MainActor in
             self.consume(normalizedLevel: normalized)
