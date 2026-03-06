@@ -68,27 +68,36 @@ final class MarketplaceService: ObservableObject {
 
         do {
             let endpoint = try normalizedEndpoint(from: rawEndpoint)
-            let uploadURL = candidateUploadURL(from: endpoint)
             let boundary = "Boundary-\(UUID().uuidString)"
-
-            var request = URLRequest(url: uploadURL)
-            request.httpMethod = "POST"
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            applyAuthHeaders(
-                request: &request,
-                authToken: authToken,
-                appleUserID: appleUserID
-            )
-
             let body = try multipartBody(boundary: boundary, input: input)
-            let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+            let uploadURLs = candidateUploadURLs(from: endpoint)
+            var lastError: Error?
 
-            guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
-                let responseText = String(data: data, encoding: .utf8) ?? ""
-                throw MarketplaceError.uploadFailed("HTTP upload failed. \(responseText)")
+            for uploadURL in uploadURLs {
+                do {
+                    var request = URLRequest(url: uploadURL)
+                    request.httpMethod = "POST"
+                    request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+                    applyAuthHeaders(
+                        request: &request,
+                        authToken: authToken,
+                        appleUserID: appleUserID
+                    )
+
+                    let (data, response) = try await URLSession.shared.upload(for: request, from: body)
+                    guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
+                        let responseText = String(data: data, encoding: .utf8) ?? ""
+                        throw MarketplaceError.uploadFailed("HTTP upload failed. \(responseText)")
+                    }
+
+                    statusMessage = "Upload request sent successfully"
+                    return
+                } catch {
+                    lastError = error
+                }
             }
 
-            statusMessage = "Upload request sent successfully"
+            throw lastError ?? MarketplaceError.uploadFailed("No upload endpoint accepted the request.")
         } catch {
             statusMessage = error.localizedDescription
         }
@@ -133,11 +142,26 @@ final class MarketplaceService: ObservableObject {
         }
     }
 
-    private func candidateUploadURL(from endpoint: URL) -> URL {
-        if endpoint.lastPathComponent.lowercased() == "upload" {
-            return endpoint
+    private func candidateUploadURLs(from endpoint: URL) -> [URL] {
+        let normalizedPath = endpoint.path.lowercased()
+        if normalizedPath.hasSuffix("/upload") || normalizedPath.hasSuffix("/api/upload") {
+            return [endpoint]
         }
-        return endpoint.appendingPathComponent("upload")
+
+        var urls: [URL] = []
+        urls.append(endpoint.appendingPathComponent("api/upload"))
+        urls.append(endpoint.appendingPathComponent("upload"))
+        urls.append(endpoint)
+
+        var seen = Set<String>()
+        return urls.filter {
+            let key = $0.absoluteString
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
     }
 
     private func applyAuthHeaders(request: inout URLRequest, authToken: String?, appleUserID: String?) {

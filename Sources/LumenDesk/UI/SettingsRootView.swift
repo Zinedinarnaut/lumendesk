@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsRootView: View {
-    private enum DetailPanel: String, CaseIterable, Identifiable {
+    private enum AppPage: String, CaseIterable, Identifiable {
         case studio
         case marketplace
         case githubPacks
@@ -15,16 +15,53 @@ struct SettingsRootView: View {
             case .githubPacks: return "GitHub Packs"
             }
         }
+
+        var symbolName: String {
+            switch self {
+            case .studio: return "display.2"
+            case .marketplace: return "storefront"
+            case .githubPacks: return "shippingbox"
+            }
+        }
     }
 
     @EnvironmentObject private var settingsStore: SettingsStore
     @EnvironmentObject private var engine: WallpaperEngine
 
+    @State private var selectedPage: AppPage = .studio
     @State private var selectedDisplayID: UInt32?
-    @State private var detailPanel: DetailPanel = .studio
 
     var body: some View {
         NavigationSplitView {
+            List(selection: $selectedPage) {
+                Section("Pages") {
+                    ForEach(AppPage.allCases) { page in
+                        Label(page.label, systemImage: page.symbolName)
+                            .tag(page)
+                    }
+                }
+            }
+            .navigationTitle("LumenDesk")
+        } detail: {
+            switch selectedPage {
+            case .studio:
+                studioPage
+            case .marketplace:
+                marketplacePage
+            case .githubPacks:
+                githubPacksPage
+            }
+        }
+        .onAppear {
+            selectFirstDisplayIfNeeded()
+        }
+        .onChange(of: engine.connectedDisplays) { _, _ in
+            selectFirstDisplayIfNeeded()
+        }
+    }
+
+    private var studioPage: some View {
+        HSplitView {
             List(selection: $selectedDisplayID) {
                 Section("Connected Displays") {
                     ForEach(engine.connectedDisplays) { display in
@@ -41,48 +78,84 @@ struct SettingsRootView: View {
                     }
                 }
             }
-            .navigationTitle("LumenDesk")
-        } detail: {
+            .frame(minWidth: 260, idealWidth: 300, maxWidth: 360)
+
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     globalControls
 
-                    Picker("Panel", selection: $detailPanel) {
-                        ForEach(DetailPanel.allCases) { panel in
-                            Text(panel.label).tag(panel)
+                    if let display = selectedDisplay {
+                        DisplayEditorView(display: display) {
+                            engine.applySelectedDisplayToAll(display.id)
                         }
-                    }
-                    .pickerStyle(.segmented)
-
-                    switch detailPanel {
-                    case .studio:
-                        if let display = selectedDisplay {
-                            DisplayEditorView(display: display) {
-                                engine.applySelectedDisplayToAll(display.id)
-                            }
-                        } else {
-                            ContentUnavailableView(
-                                "No Display Selected",
-                                systemImage: "display",
-                                description: Text("Connect a display to start assigning wallpaper sources.")
-                            )
-                            .frame(maxWidth: .infinity, minHeight: 300)
-                        }
-                    case .marketplace:
-                        MarketplaceView(selectedDisplay: selectedDisplay)
-                    case .githubPacks:
-                        GitHubPacksView(selectedDisplay: selectedDisplay)
+                    } else {
+                        ContentUnavailableView(
+                            "No Display Selected",
+                            systemImage: "display",
+                            description: Text("Connect a display to start assigning wallpaper sources.")
+                        )
+                        .frame(maxWidth: .infinity, minHeight: 320)
                     }
                 }
                 .padding(20)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .navigationSplitViewStyle(.balanced)
-        .onAppear {
-            selectFirstDisplayIfNeeded()
+    }
+
+    private var marketplacePage: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                displaySelectionPanel(
+                    title: "Marketplace Target Display",
+                    subtitle: "Choose which display receives wallpapers from the marketplace."
+                )
+
+                MarketplaceView(selectedDisplay: selectedDisplay)
+            }
+            .padding(20)
         }
-        .onChange(of: engine.connectedDisplays) { _, _ in
-            selectFirstDisplayIfNeeded()
+    }
+
+    private var githubPacksPage: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                displaySelectionPanel(
+                    title: "GitHub Packs Target Display",
+                    subtitle: "Choose which display receives wallpapers from installed packs."
+                )
+
+                GitHubPacksView(selectedDisplay: selectedDisplay)
+            }
+            .padding(20)
+        }
+    }
+
+    private func displaySelectionPanel(title: String, subtitle: String) -> some View {
+        GroupBox(title) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Picker("Display", selection: $selectedDisplayID) {
+                    ForEach(engine.connectedDisplays) { display in
+                        Text(display.name).tag(Optional(display.id))
+                    }
+                }
+                .pickerStyle(.menu)
+
+                if let selectedDisplay {
+                    Text("Selected: \(selectedDisplay.name)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("No connected displays")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -120,6 +193,7 @@ struct SettingsRootView: View {
                 Toggle("Launch at login", isOn: globalBinding(\.launchAtLogin))
 
                 Divider()
+
                 Text("Music reactive mode is currently disabled.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
