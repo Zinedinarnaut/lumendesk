@@ -13,6 +13,7 @@ LumenDesk is a native SwiftUI macOS wallpaper engine for Apple Silicon Macs.
 - Adds community features:
   - Marketplace feed + upload flow
   - GitHub wallpaper pack search and install
+  - Sign in with Apple for marketplace identity/auth headers
 - Adds performance/reactive features:
   - Music reactive mode with microphone beat detection
   - Automatic GPU throttling based on CPU load
@@ -82,6 +83,15 @@ If `pack.json` is missing, video files in the repo are auto-discovered.
 
 - `SMAppServiceErrorDomain Code=1 Operation not permitted`: launch-at-login registration is limited by signing/runtime context. Build and run as a normal `.app` from Xcode.
 - Local web URLs like `*.localhost` are supported; the app automatically retries `localhost`/`127.0.0.1` fallbacks.
+
+## Marketplace Auth (Apple)
+
+- The app uses native Sign in with Apple in the Marketplace panel.
+- Upload requests include:
+  - `Authorization: Bearer <apple_identity_token>`
+  - `X-Apple-User-ID: <apple_user_id>`
+- Your marketplace backend should verify the Apple identity token server-side against Apple's public keys before accepting uploads.
+- With a paid Apple Developer account, use your own bundle ID/team and keep the Sign in with Apple capability enabled.
 
 ## Notes
 

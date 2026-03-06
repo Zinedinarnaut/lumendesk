@@ -1,4 +1,5 @@
 import AppKit
+import AuthenticationServices
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -6,6 +7,7 @@ struct MarketplaceView: View {
     let selectedDisplay: DisplayDescriptor?
 
     @EnvironmentObject private var settingsStore: SettingsStore
+    @EnvironmentObject private var appleSignInService: AppleSignInService
     @EnvironmentObject private var marketplaceService: MarketplaceService
     @EnvironmentObject private var installService: WallpaperInstallService
 
@@ -15,6 +17,45 @@ struct MarketplaceView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            GroupBox("Marketplace Account") {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let session = appleSignInService.session {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Signed in with Apple")
+                                    .font(.headline)
+                                Text(displayName(for: session))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Sign Out") {
+                                appleSignInService.signOut()
+                            }
+                        }
+                    } else {
+                        SignInWithAppleButton(
+                            .continue,
+                            onRequest: appleSignInService.configureAppleIDRequest,
+                            onCompletion: appleSignInService.handleAuthorization
+                        )
+                        .signInWithAppleButtonStyle(.black)
+                        .frame(width: 260, height: 34)
+
+                        Text("Use Apple login for marketplace uploads and identity headers.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let status = appleSignInService.statusMessage, !status.isEmpty {
+                        Text(status)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
             GroupBox("Marketplace") {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
@@ -22,7 +63,11 @@ struct MarketplaceView: View {
                             .textFieldStyle(.roundedBorder)
                         Button("Refresh") {
                             Task {
-                                await marketplaceService.fetch(endpoint: settingsStore.settings.marketplaceEndpoint)
+                                await marketplaceService.fetch(
+                                    endpoint: settingsStore.settings.marketplaceEndpoint,
+                                    authToken: appleSignInService.authToken,
+                                    appleUserID: appleSignInService.userID
+                                )
                             }
                         }
                         .disabled(marketplaceService.isLoading)
@@ -137,7 +182,9 @@ struct MarketplaceView: View {
                             Task {
                                 await marketplaceService.upload(
                                     endpoint: settingsStore.settings.marketplaceEndpoint,
-                                    input: sanitizedUploadInput()
+                                    input: sanitizedUploadInput(),
+                                    authToken: appleSignInService.authToken,
+                                    appleUserID: appleSignInService.userID
                                 )
                             }
                         }
@@ -149,6 +196,12 @@ struct MarketplaceView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+
+                    if !appleSignInService.isSignedIn {
+                        Text("Sign in with Apple to upload wallpapers.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .padding(.vertical, 4)
             }
@@ -156,7 +209,11 @@ struct MarketplaceView: View {
         .onAppear {
             if marketplaceService.wallpapers.isEmpty {
                 Task {
-                    await marketplaceService.fetch(endpoint: settingsStore.settings.marketplaceEndpoint)
+                    await marketplaceService.fetch(
+                        endpoint: settingsStore.settings.marketplaceEndpoint,
+                        authToken: appleSignInService.authToken,
+                        appleUserID: appleSignInService.userID
+                    )
                 }
             }
         }
@@ -174,6 +231,8 @@ struct MarketplaceView: View {
     }
 
     private var canUpload: Bool {
+        guard appleSignInService.isSignedIn else { return false }
+
         let hasBasic = !uploadInput.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !uploadInput.author.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
@@ -185,6 +244,19 @@ struct MarketplaceView: View {
         case .web, .gradient, .shader:
             return !uploadInput.sourceValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
+    }
+
+    private func displayName(for session: AppleSignInService.Session) -> String {
+        if let fullName = session.fullName, !fullName.isEmpty {
+            return fullName
+        }
+
+        if let email = session.email, !email.isEmpty {
+            return email
+        }
+
+        let shortID = session.userID.count > 12 ? "\(session.userID.prefix(12))…" : session.userID
+        return "Apple user \(shortID)"
     }
 
     private func install(_ item: MarketplaceWallpaper) {

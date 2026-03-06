@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct LumenDeskApp: App {
     @StateObject private var settingsStore: SettingsStore
+    @StateObject private var appleSignInService: AppleSignInService
     @StateObject private var installService: WallpaperInstallService
     @StateObject private var marketplaceService: MarketplaceService
     @StateObject private var gitHubPackService: GitHubPackService
@@ -12,6 +13,7 @@ struct LumenDeskApp: App {
 
     init() {
         let store = SettingsStore()
+        let appleSignIn = AppleSignInService()
         let installer = WallpaperInstallService()
         let marketplace = MarketplaceService()
         let audioReactive = AudioReactiveService()
@@ -24,6 +26,7 @@ struct LumenDeskApp: App {
         )
 
         _settingsStore = StateObject(wrappedValue: store)
+        _appleSignInService = StateObject(wrappedValue: appleSignIn)
         _installService = StateObject(wrappedValue: installer)
         _marketplaceService = StateObject(wrappedValue: marketplace)
         _audioReactiveService = StateObject(wrappedValue: audioReactive)
@@ -38,6 +41,7 @@ struct LumenDeskApp: App {
         WindowGroup("LumenDesk Studio", id: "studio") {
             SettingsRootView()
                 .environmentObject(settingsStore)
+                .environmentObject(appleSignInService)
                 .environmentObject(installService)
                 .environmentObject(marketplaceService)
                 .environmentObject(gitHubPackService)

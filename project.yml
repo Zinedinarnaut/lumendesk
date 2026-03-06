@@ -19,11 +19,13 @@ targets:
       - sdk: IOKit.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
+      - sdk: AuthenticationServices.framework
       - sdk: ServiceManagement.framework
     settings:
       base:
         PRODUCT_NAME: LumenDesk
         PRODUCT_BUNDLE_IDENTIFIER: com.lumendesk.desktop
         CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Config/LumenDesk.entitlements
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Config/Info.plist

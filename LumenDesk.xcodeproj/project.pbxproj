@@ -23,6 +23,7 @@
 		4F6CF4B712F0FABA816AFAF1 /* CommunityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84DA97C7A0B8D690EB97B6E9 /* CommunityModels.swift */; };
 		54DA03A110B61AA52E95C734 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 060CAEE4121DE5B795FC0FE7 /* MetalKit.framework */; };
 		5519F3803CD36EF956C3130C /* WebWallpaperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8C9A02C2842FBFD7EB1909 /* WebWallpaperView.swift */; };
+		5F86802771A90D6B1EE19ED8 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ECDF0308AE2F569C25DA049A /* AuthenticationServices.framework */; };
 		610035BB99F0873B50606434 /* LoginItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2558BF2E499E5FEE967A9626 /* LoginItemService.swift */; };
 		633590498AD6CFD02F54417B /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DC1DE14A779E5E40E01B93 /* AppSettings.swift */; };
 		7C34FEAC3CD4DD85244DF8EA /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E364EA15DCDF85E5A7FE8EF4 /* AppKit.framework */; };
@@ -39,6 +40,7 @@
 		C916E3C7EECCD603310A6280 /* MarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD09B1BC52AFAEBCD3A07FF /* MarketplaceView.swift */; };
 		CF30B9D880572B3EF78AA10D /* MarketplaceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70366194D2087F6472AE82D4 /* MarketplaceService.swift */; };
 		D81B4A98BF530B250B690FC1 /* CPULoadMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730252EDACEE4B6CAF2316A3 /* CPULoadMonitor.swift */; };
+		D931AD100DB4573451132A15 /* AppleSignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD9A081821060E02DB5C1B2A /* AppleSignInService.swift */; };
 		DF31FDDB1F619AAC460887DB /* AudioReactiveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 460C52E53EE565F88794DFBE /* AudioReactiveService.swift */; };
 		E165ED1868803EEB2E1AFC6E /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 093A5052F86B9E1DCC24062C /* Color+Hex.swift */; };
 /* End PBXBuildFile section */
@@ -71,6 +73,7 @@
 		9F6E7763F348BA334BF33359 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		A7377EB527CBDC44F55CECE2 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		A9D120DEB7966A882248C70A /* SettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsRootView.swift; sourceTree = "<group>"; };
+		AD9A081821060E02DB5C1B2A /* AppleSignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInService.swift; sourceTree = "<group>"; };
 		B7CF04E63DDB38DABC72264A /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		C6B369698DA87BBCE774FE13 /* WallpaperWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WallpaperWindowController.swift; sourceTree = "<group>"; };
 		CF6FFFF41DCAB1C40F9FA69A /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -78,6 +81,7 @@
 		E364EA15DCDF85E5A7FE8EF4 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		E5CC343654890261A0EC8EF9 /* FullscreenDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenDetector.swift; sourceTree = "<group>"; };
 		E83596558DC48A9403ECA8B3 /* AnimatedGradientWallpaper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedGradientWallpaper.swift; sourceTree = "<group>"; };
+		ECDF0308AE2F569C25DA049A /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
 		FE4821557B3FCD097A4B3F4D /* DisplayDescriptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayDescriptor.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -92,6 +96,7 @@
 				3D63AC390638CA476807521C /* IOKit.framework in Frameworks */,
 				4E2643ABE5041DA3FA05DD2B /* Metal.framework in Frameworks */,
 				54DA03A110B61AA52E95C734 /* MetalKit.framework in Frameworks */,
+				5F86802771A90D6B1EE19ED8 /* AuthenticationServices.framework in Frameworks */,
 				9185CAAF360DAF0822911D33 /* ServiceManagement.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -119,6 +124,7 @@
 		2AC0FB2C79D3294702B1E8BB /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				AD9A081821060E02DB5C1B2A /* AppleSignInService.swift */,
 				460C52E53EE565F88794DFBE /* AudioReactiveService.swift */,
 				083350F05C4D25CBEB89F04C /* BatteryMonitor.swift */,
 				730252EDACEE4B6CAF2316A3 /* CPULoadMonitor.swift */,
@@ -174,6 +180,7 @@
 			isa = PBXGroup;
 			children = (
 				E364EA15DCDF85E5A7FE8EF4 /* AppKit.framework */,
+				ECDF0308AE2F569C25DA049A /* AuthenticationServices.framework */,
 				B7CF04E63DDB38DABC72264A /* AVFoundation.framework */,
 				9F6E7763F348BA334BF33359 /* IOKit.framework */,
 				CF6FFFF41DCAB1C40F9FA69A /* Metal.framework */,
@@ -282,6 +289,7 @@
 			files = (
 				1E5ECB54EECBEE1F8A132FFB /* AnimatedGradientWallpaper.swift in Sources */,
 				633590498AD6CFD02F54417B /* AppSettings.swift in Sources */,
+				D931AD100DB4573451132A15 /* AppleSignInService.swift in Sources */,
 				DF31FDDB1F619AAC460887DB /* AudioReactiveService.swift in Sources */,
 				4538F0C622EF4B62C3F27BC3 /* BatteryMonitor.swift in Sources */,
 				D81B4A98BF530B250B690FC1 /* CPULoadMonitor.swift in Sources */,
@@ -373,6 +381,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/LumenDesk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -392,6 +401,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Config/LumenDesk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				GENERATE_INFOPLIST_FILE = NO;

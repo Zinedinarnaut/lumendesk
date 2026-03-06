@@ -7,7 +7,11 @@ final class MarketplaceService: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var statusMessage: String?
 
-    func fetch(endpoint rawEndpoint: String) async {
+    func fetch(
+        endpoint rawEndpoint: String,
+        authToken: String? = nil,
+        appleUserID: String? = nil
+    ) async {
         isLoading = true
         statusMessage = nil
         defer { isLoading = false }
@@ -19,7 +23,13 @@ final class MarketplaceService: ObservableObject {
             var lastError: Error?
             for url in urls {
                 do {
-                    let (data, response) = try await URLSession.shared.data(from: url)
+                    var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData)
+                    applyAuthHeaders(
+                        request: &request,
+                        authToken: authToken,
+                        appleUserID: appleUserID
+                    )
+                    let (data, response) = try await URLSession.shared.data(for: request)
                     guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
                         continue
                     }
@@ -48,7 +58,12 @@ final class MarketplaceService: ObservableObject {
         }
     }
 
-    func upload(endpoint rawEndpoint: String, input: MarketplaceUploadInput) async {
+    func upload(
+        endpoint rawEndpoint: String,
+        input: MarketplaceUploadInput,
+        authToken: String? = nil,
+        appleUserID: String? = nil
+    ) async {
         statusMessage = nil
 
         do {
@@ -59,6 +74,11 @@ final class MarketplaceService: ObservableObject {
             var request = URLRequest(url: uploadURL)
             request.httpMethod = "POST"
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+            applyAuthHeaders(
+                request: &request,
+                authToken: authToken,
+                appleUserID: appleUserID
+            )
 
             let body = try multipartBody(boundary: boundary, input: input)
             let (data, response) = try await URLSession.shared.upload(for: request, from: body)
@@ -118,6 +138,24 @@ final class MarketplaceService: ObservableObject {
             return endpoint
         }
         return endpoint.appendingPathComponent("upload")
+    }
+
+    private func applyAuthHeaders(request: inout URLRequest, authToken: String?, appleUserID: String?) {
+        request.setValue("LumenDesk", forHTTPHeaderField: "User-Agent")
+
+        if let authToken {
+            let trimmed = authToken.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                request.setValue("Bearer \(trimmed)", forHTTPHeaderField: "Authorization")
+            }
+        }
+
+        if let appleUserID {
+            let trimmed = appleUserID.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                request.setValue(trimmed, forHTTPHeaderField: "X-Apple-User-ID")
+            }
+        }
     }
 
     private func multipartBody(boundary: String, input: MarketplaceUploadInput) throws -> Data {
