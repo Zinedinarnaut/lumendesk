@@ -175,7 +175,7 @@ struct AppSettings: Equatable, Codable {
         musicReactiveEnabled: false,
         reactiveSensitivity: 1.0,
         gpuAutoThrottleEnabled: true,
-        marketplaceEndpoint: "http://localhost:3000",
+        marketplaceEndpoint: "https://skill-deploy-jxabycflmw-codex-agent-deploys.vercel.app",
         githubPackQuery: "topic:lumendesk-wallpaper-pack",
         displaySettings: [:]
     )
