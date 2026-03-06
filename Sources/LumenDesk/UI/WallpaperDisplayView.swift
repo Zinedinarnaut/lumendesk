@@ -26,7 +26,7 @@ struct WallpaperDisplayView: View {
                     playbackRate: config.playbackRate,
                     reactiveLevel: engine.reactiveLevel,
                     reactiveBeatPulse: engine.reactiveBeatPulse,
-                    musicReactiveEnabled: settingsStore.settings.musicReactiveEnabled
+                    musicReactiveEnabled: false
                 )
             case .video(let path):
                 if FileManager.default.fileExists(atPath: path) {

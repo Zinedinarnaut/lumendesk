@@ -120,24 +120,9 @@ struct SettingsRootView: View {
                 Toggle("Launch at login", isOn: globalBinding(\.launchAtLogin))
 
                 Divider()
-
-                Toggle("Music reactive mode", isOn: globalBinding(\.musicReactiveEnabled))
-
-                HStack {
-                    Text("Reactive sensitivity")
-                    Slider(value: globalBinding(\.reactiveSensitivity), in: 0.5...2.0, step: 0.05)
-                    Text(String(format: "%.2fx", settingsStore.settings.reactiveSensitivity))
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
-
-                HStack {
-                    Text("Mic level")
-                    ProgressView(value: engine.reactiveLevel)
-                    Text("Beat: \(Int(engine.reactiveBeatPulse * 100))")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                }
+                Text("Music reactive mode is currently disabled.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
 
                 Divider()
 

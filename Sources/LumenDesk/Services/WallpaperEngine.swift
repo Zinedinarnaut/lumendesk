@@ -78,6 +78,13 @@ final class WallpaperEngine: ObservableObject {
         guard !hasStarted else { return }
         hasStarted = true
 
+        if settingsStore.settings.musicReactiveEnabled || settingsStore.settings.reactiveSensitivity != 1.0 {
+            var updated = settingsStore.settings
+            updated.musicReactiveEnabled = false
+            updated.reactiveSensitivity = 1.0
+            settingsStore.settings = updated
+        }
+
         installScreenObservers()
         refreshDisplays()
         configurePauseMonitors()
@@ -86,8 +93,8 @@ final class WallpaperEngine: ObservableObject {
 
         cpuLoadMonitor.start()
         audioReactiveService.updateConfiguration(
-            enabled: settingsStore.settings.musicReactiveEnabled,
-            sensitivity: settingsStore.settings.reactiveSensitivity
+            enabled: false,
+            sensitivity: 1.0
         )
 
         LoginItemService.sync(enabled: settingsStore.settings.launchAtLogin)
@@ -127,30 +134,6 @@ final class WallpaperEngine: ObservableObject {
             .sink { enabled in
                 Task { @MainActor in
                     LoginItemService.sync(enabled: enabled)
-                }
-            }
-            .store(in: &cancellables)
-
-        struct ReactiveConfig: Equatable {
-            let enabled: Bool
-            let sensitivity: Double
-
-            static func == (lhs: ReactiveConfig, rhs: ReactiveConfig) -> Bool {
-                lhs.enabled == rhs.enabled && abs(lhs.sensitivity - rhs.sensitivity) < 0.0001
-            }
-        }
-
-        let reactiveSettingsPublisher = settingsStore.$settings
-            .map { ReactiveConfig(enabled: $0.musicReactiveEnabled, sensitivity: $0.reactiveSensitivity) }
-            .removeDuplicates()
-
-        reactiveSettingsPublisher
-            .sink { [weak self] config in
-                Task { @MainActor in
-                    self?.audioReactiveService.updateConfiguration(
-                        enabled: config.enabled,
-                        sensitivity: config.sensitivity
-                    )
                 }
             }
             .store(in: &cancellables)

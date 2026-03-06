@@ -26,7 +26,6 @@ struct MenuBarControlsView: View {
 
             Toggle("Pause On Battery", isOn: pauseBatteryBinding)
             Toggle("Pause On Fullscreen", isOn: pauseFullscreenBinding)
-            Toggle("Music Reactive", isOn: musicReactiveBinding)
 
             Divider()
 
@@ -62,10 +61,6 @@ struct MenuBarControlsView: View {
                 settingsStore.settings = updated
             }
         )
-    }
-
-    private var musicReactiveBinding: Binding<Bool> {
-        globalBinding(\.musicReactiveEnabled)
     }
 
     private func globalBinding<Value>(_ keyPath: WritableKeyPath<AppSettings, Value>) -> Binding<Value> {
