@@ -47,6 +47,25 @@ open LumenDesk.xcodeproj
 
 Run the `LumenDesk` scheme in Xcode.
 
+## GitHub Releases
+
+Releases are automated with GitHub Actions (`.github/workflows/release.yml`).
+
+When you push a tag like `v0.1.0`, GitHub will:
+
+- Build an unsigned Release `.app` on `macos-15`
+- Package and upload:
+  - `LumenDesk-macOS.zip`
+  - `LumenDesk-macOS.dmg`
+- Create a GitHub Release with generated release notes
+
+Cut a new release:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 ## Regenerate Project
 
 If you edit `project.yml`, regenerate the Xcode project:
