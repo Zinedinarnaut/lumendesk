@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 63;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -35,6 +35,7 @@
 		9B78E8BC2C3255B85BB3A865 /* VideoWallpaperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67AD1F4F38A5DE86C4A9D581 /* VideoWallpaperView.swift */; };
 		A00900AB96D20E57FE60370F /* WallpaperDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9421E4F101A52FE954A951CD /* WallpaperDisplayView.swift */; };
 		A29E18D34106197025B67B54 /* WallpaperWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6B369698DA87BBCE774FE13 /* WallpaperWindowController.swift */; };
+		AD4C5476650CCFF461E7A7BA /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4092F0AE53137116C9E9DF69 /* AppShellView.swift */; };
 		B06CE2C10B5BC7AF2E7C1D13 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B7CF04E63DDB38DABC72264A /* AVFoundation.framework */; };
 		C814925FF89A705C544779E9 /* FullscreenDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5CC343654890261A0EC8EF9 /* FullscreenDetector.swift */; };
 		C916E3C7EECCD603310A6280 /* MarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DD09B1BC52AFAEBCD3A07FF /* MarketplaceView.swift */; };
@@ -55,6 +56,7 @@
 		2558BF2E499E5FEE967A9626 /* LoginItemService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemService.swift; sourceTree = "<group>"; };
 		29DC1DE14A779E5E40E01B93 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		3DD09B1BC52AFAEBCD3A07FF /* MarketplaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceView.swift; sourceTree = "<group>"; };
+		4092F0AE53137116C9E9DF69 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
 		45570D1F58CD252BAEF1E6B1 /* MenuBarControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarControlsView.swift; sourceTree = "<group>"; };
 		460C52E53EE565F88794DFBE /* AudioReactiveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioReactiveService.swift; sourceTree = "<group>"; };
 		629200EE72EF9E29EA8E1DE4 /* LumenDeskApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LumenDeskApp.swift; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 			isa = PBXGroup;
 			children = (
 				E83596558DC48A9403ECA8B3 /* AnimatedGradientWallpaper.swift */,
+				4092F0AE53137116C9E9DF69 /* AppShellView.swift */,
 				8CDDB5F508A2C13007E75851 /* DisplayEditorView.swift */,
 				0EBD846975DF38B47505EE54 /* GitHubPacksView.swift */,
 				3DD09B1BC52AFAEBCD3A07FF /* MarketplaceView.swift */,
@@ -273,6 +276,7 @@
 			);
 			mainGroup = 24A649411BAC554F8BBE3A63;
 			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -288,6 +292,7 @@
 			files = (
 				1E5ECB54EECBEE1F8A132FFB /* AnimatedGradientWallpaper.swift in Sources */,
 				633590498AD6CFD02F54417B /* AppSettings.swift in Sources */,
+				AD4C5476650CCFF461E7A7BA /* AppShellView.swift in Sources */,
 				D931AD100DB4573451132A15 /* AppleSignInService.swift in Sources */,
 				DF31FDDB1F619AAC460887DB /* AudioReactiveService.swift in Sources */,
 				4538F0C622EF4B62C3F27BC3 /* BatteryMonitor.swift in Sources */,
@@ -383,7 +388,6 @@
 				CODE_SIGN_ENTITLEMENTS = Config/LumenDesk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = ZG4594K3ZL;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -404,7 +408,6 @@
 				CODE_SIGN_ENTITLEMENTS = Config/LumenDesk.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = ZG4594K3ZL;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Config/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

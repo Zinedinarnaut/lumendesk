@@ -6,11 +6,16 @@ final class MarketplaceService: ObservableObject {
     @Published private(set) var wallpapers: [MarketplaceWallpaper] = []
     @Published private(set) var isLoading = false
     @Published private(set) var statusMessage: String?
+    @Published private(set) var totalAvailable = 0
 
     func fetch(
         endpoint rawEndpoint: String,
         authToken: String? = nil,
-        appleUserID: String? = nil
+        appleUserID: String? = nil,
+        query: String? = nil,
+        kind: CommunityWallpaperKind? = nil,
+        sort: MarketplaceSortOption = .featured,
+        perPage: Int = 120
     ) async {
         isLoading = true
         statusMessage = nil
@@ -18,7 +23,13 @@ final class MarketplaceService: ObservableObject {
 
         do {
             let endpoint = try normalizedEndpoint(from: rawEndpoint)
-            let urls = candidateFeedURLs(from: endpoint)
+            let urls = candidateFeedURLs(
+                from: endpoint,
+                query: query,
+                kind: kind,
+                sort: sort,
+                perPage: perPage
+            )
 
             var lastError: Error?
             for url in urls {
@@ -34,15 +45,31 @@ final class MarketplaceService: ObservableObject {
                         continue
                     }
 
+                    if let catalog = try? JSONDecoder().decode(MarketplaceCatalogEnvelope.self, from: data) {
+                        wallpapers = catalog.items
+                        totalAvailable = catalog.total ?? catalog.items.count
+                        statusMessage = "Loaded \(catalog.items.count) of \(totalAvailable) wallpapers"
+                        return
+                    }
+
                     if let array = try? JSONDecoder().decode([MarketplaceWallpaper].self, from: data) {
                         wallpapers = array
+                        totalAvailable = array.count
                         statusMessage = "Loaded \(array.count) wallpapers"
                         return
                     }
 
                     if let feed = try? JSONDecoder().decode(MarketplaceFeedEnvelope.self, from: data) {
                         wallpapers = feed.wallpapers
+                        totalAvailable = feed.wallpapers.count
                         statusMessage = "Loaded \(feed.wallpapers.count) wallpapers"
+                        return
+                    }
+
+                    if let compatibility = try? JSONDecoder().decode(MarketplaceCompatibilityEnvelope.self, from: data) {
+                        wallpapers = compatibility.wallpapers
+                        totalAvailable = compatibility.total ?? compatibility.wallpapers.count
+                        statusMessage = "Loaded \(compatibility.wallpapers.count) of \(totalAvailable) wallpapers"
                         return
                     }
 
@@ -90,7 +117,11 @@ final class MarketplaceService: ObservableObject {
                         throw MarketplaceError.uploadFailed("HTTP upload failed. \(responseText)")
                     }
 
-                    statusMessage = "Upload request sent successfully"
+                    if let item = decodeUploadedWallpaper(from: data) {
+                        upsertWallpaper(item)
+                    }
+
+                    statusMessage = "Upload completed"
                     return
                 } catch {
                     lastError = error
@@ -100,6 +131,42 @@ final class MarketplaceService: ObservableObject {
             throw lastError ?? MarketplaceError.uploadFailed("No upload endpoint accepted the request.")
         } catch {
             statusMessage = error.localizedDescription
+        }
+    }
+
+    func trackInstall(
+        endpoint rawEndpoint: String,
+        wallpaperID: String,
+        authToken: String? = nil,
+        appleUserID: String? = nil
+    ) async {
+        do {
+            let endpoint = try normalizedEndpoint(from: rawEndpoint)
+            let urls = candidateInstallURLs(from: endpoint, wallpaperID: wallpaperID)
+
+            for url in urls {
+                do {
+                    var request = URLRequest(url: url)
+                    request.httpMethod = "POST"
+                    applyAuthHeaders(request: &request, authToken: authToken, appleUserID: appleUserID)
+
+                    let (data, response) = try await URLSession.shared.data(for: request)
+                    guard let http = response as? HTTPURLResponse, 200..<300 ~= http.statusCode else {
+                        continue
+                    }
+
+                    if let updated = decodeUploadedWallpaper(from: data) {
+                        upsertWallpaper(updated)
+                    } else {
+                        incrementInstallCount(for: wallpaperID)
+                    }
+                    return
+                } catch {
+                    continue
+                }
+            }
+        } catch {
+            return
         }
     }
 
@@ -120,15 +187,29 @@ final class MarketplaceService: ObservableObject {
         return url
     }
 
-    private func candidateFeedURLs(from endpoint: URL) -> [URL] {
+    private func candidateFeedURLs(
+        from endpoint: URL,
+        query: String?,
+        kind: CommunityWallpaperKind?,
+        sort: MarketplaceSortOption,
+        perPage: Int
+    ) -> [URL] {
         if endpoint.pathExtension.lowercased() == "json" {
             return [endpoint]
         }
 
+        let parameters = FeedParameters(
+            query: query?.trimmingCharacters(in: .whitespacesAndNewlines),
+            kindRawValue: kind?.rawValue,
+            sortRawValue: sort.rawValue,
+            perPage: max(1, min(perPage, 250))
+        )
+
         var urls: [URL] = []
+        urls.append(configureFeedURL(endpoint.appendingPathComponent("api/marketplace"), parameters: parameters))
+        urls.append(configureFeedURL(endpoint.appendingPathComponent("api/wallpapers"), parameters: parameters))
         urls.append(endpoint.appendingPathComponent("wallpapers.json"))
-        urls.append(endpoint.appendingPathComponent("api/wallpapers"))
-        urls.append(endpoint)
+        urls.append(configureFeedURL(endpoint, parameters: parameters))
 
         // De-duplicate preserving order.
         var seen = Set<String>()
@@ -162,6 +243,52 @@ final class MarketplaceService: ObservableObject {
             seen.insert(key)
             return true
         }
+    }
+
+    private func candidateInstallURLs(from endpoint: URL, wallpaperID: String) -> [URL] {
+        let cleanID = wallpaperID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanID.isEmpty else { return [] }
+
+        var urls: [URL] = []
+        urls.append(endpoint.appendingPathComponent("api/wallpapers").appendingPathComponent(cleanID).appendingPathComponent("install"))
+        urls.append(endpoint.appendingPathComponent("wallpapers").appendingPathComponent(cleanID).appendingPathComponent("install"))
+
+        let normalizedPath = endpoint.path.lowercased()
+        if normalizedPath.contains("/api/wallpapers/") && normalizedPath.hasSuffix("/install") {
+            urls.insert(endpoint, at: 0)
+        }
+
+        var seen = Set<String>()
+        return urls.filter {
+            let key = $0.absoluteString
+            if seen.contains(key) {
+                return false
+            }
+            seen.insert(key)
+            return true
+        }
+    }
+
+    private func configureFeedURL(_ rawURL: URL, parameters: FeedParameters) -> URL {
+        guard var components = URLComponents(url: rawURL, resolvingAgainstBaseURL: false) else {
+            return rawURL
+        }
+
+        var queryItems = components.queryItems ?? []
+
+        if let query = parameters.query, !query.isEmpty {
+            queryItems.append(URLQueryItem(name: "q", value: query))
+        }
+
+        if let kind = parameters.kindRawValue, !kind.isEmpty {
+            queryItems.append(URLQueryItem(name: "kind", value: kind))
+        }
+
+        queryItems.append(URLQueryItem(name: "sort", value: parameters.sortRawValue))
+        queryItems.append(URLQueryItem(name: "perPage", value: String(parameters.perPage)))
+
+        components.queryItems = queryItems
+        return components.url ?? rawURL
     }
 
     private func applyAuthHeaders(request: inout URLRequest, authToken: String?, appleUserID: String?) {
@@ -198,6 +325,22 @@ final class MarketplaceService: ObservableObject {
         appendText("kind", input.kind.rawValue)
         appendText("sourceValue", input.sourceValue)
 
+        if !input.tags.isEmpty {
+            appendText("tags", input.tags)
+        }
+
+        if !input.thumbnailURL.isEmpty {
+            appendText("thumbnailURL", input.thumbnailURL)
+        }
+
+        if !input.previewURL.isEmpty {
+            appendText("previewURL", input.previewURL)
+        }
+
+        if !input.accentColor.isEmpty {
+            appendText("accentColor", input.accentColor)
+        }
+
         if let fileURL = input.fileURL {
             let fileData = try Data(contentsOf: fileURL)
             let filename = fileURL.lastPathComponent
@@ -213,6 +356,54 @@ final class MarketplaceService: ObservableObject {
         body.appendString("--\(boundary)--\r\n")
         return body
     }
+
+    private func decodeUploadedWallpaper(from data: Data) -> MarketplaceWallpaper? {
+        if let itemEnvelope = try? JSONDecoder().decode(MarketplaceItemEnvelope.self, from: data) {
+            return itemEnvelope.wallpaper
+        }
+
+        if let singleItem = try? JSONDecoder().decode(MarketplaceWallpaper.self, from: data) {
+            return singleItem
+        }
+
+        return nil
+    }
+
+    private func upsertWallpaper(_ item: MarketplaceWallpaper) {
+        if let index = wallpapers.firstIndex(where: { $0.id == item.id }) {
+            wallpapers[index] = item
+        } else {
+            wallpapers.insert(item, at: 0)
+            totalAvailable += 1
+        }
+    }
+
+    private func incrementInstallCount(for wallpaperID: String) {
+        guard let index = wallpapers.firstIndex(where: { $0.id == wallpaperID }) else {
+            return
+        }
+
+        wallpapers[index].installs += 1
+    }
+}
+
+private struct FeedParameters {
+    let query: String?
+    let kindRawValue: String?
+    let sortRawValue: String
+    let perPage: Int
+}
+
+private struct MarketplaceCompatibilityEnvelope: Codable {
+    let wallpapers: [MarketplaceWallpaper]
+    let page: Int?
+    let perPage: Int?
+    let total: Int?
+    let hasMore: Bool?
+}
+
+private struct MarketplaceItemEnvelope: Codable {
+    let wallpaper: MarketplaceWallpaper
 }
 
 private extension Data {

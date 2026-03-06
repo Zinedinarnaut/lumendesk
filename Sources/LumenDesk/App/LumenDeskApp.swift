@@ -39,7 +39,7 @@ struct LumenDeskApp: App {
 
     var body: some Scene {
         WindowGroup("LumenDesk Studio", id: "studio") {
-            SettingsRootView()
+            AppShellView()
                 .environmentObject(settingsStore)
                 .environmentObject(appleSignInService)
                 .environmentObject(installService)

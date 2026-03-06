@@ -4,6 +4,7 @@ LumenDesk is a native SwiftUI macOS wallpaper engine for Apple Silicon Macs.
 
 ## What It Does
 
+- Shows a branded startup splash for a polished consumer-app launch experience.
 - Renders animated wallpapers on every connected display using desktop-level windows.
 - Supports four source types per display:
   - Animated gradient presets
@@ -11,7 +12,9 @@ LumenDesk is a native SwiftUI macOS wallpaper engine for Apple Silicon Macs.
   - Local looping video files
   - Live web pages (WKWebView)
 - Adds community features:
-  - Marketplace feed + upload flow
+  - Marketplace feed + upload flow with richer metadata (preview URL, tags, featured, install counts)
+  - Marketplace browse grid with search/filter/sort and wallpaper preview cards
+  - Full preview sheet for marketplace items (web/video/gradient/metal)
   - Dedicated Marketplace page
   - GitHub wallpaper pack search and install
   - Dedicated GitHub Packs page
@@ -107,7 +110,10 @@ Required environment variables (Vercel project):
 Key routes:
 
 - `GET /api/health`
+- `GET /api/marketplace`
 - `GET /api/wallpapers`
+- `GET /api/wallpapers/:id`
+- `POST /api/wallpapers/:id/install`
 - `POST /api/upload`
 - `GET /wallpapers.json`
 - `POST /upload`

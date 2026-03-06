@@ -18,6 +18,31 @@ enum CommunityWallpaperKind: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+enum MarketplacePreviewKind: String, CaseIterable, Identifiable, Codable {
+    case image
+    case video
+    case web
+    case none
+
+    var id: String { rawValue }
+}
+
+enum MarketplaceSortOption: String, CaseIterable, Identifiable {
+    case featured
+    case latest
+    case popular
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .featured: return "Featured"
+        case .latest: return "Latest"
+        case .popular: return "Popular"
+        }
+    }
+}
+
 struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
     var id: String
     var title: String
@@ -26,8 +51,16 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
     var kind: CommunityWallpaperKind
     var sourceValue: String?
     var downloadURL: String?
+    var previewURL: String?
+    var previewKind: MarketplacePreviewKind
+    var accentColor: String?
     var thumbnailURL: String?
+    var featured: Bool
+    var installs: Int
+    var downloads: Int
     var tags: [String]
+    var createdAt: String?
+    var updatedAt: String?
 
     init(
         id: String,
@@ -37,8 +70,16 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
         kind: CommunityWallpaperKind,
         sourceValue: String?,
         downloadURL: String?,
+        previewURL: String?,
+        previewKind: MarketplacePreviewKind,
+        accentColor: String?,
         thumbnailURL: String?,
-        tags: [String]
+        featured: Bool,
+        installs: Int,
+        downloads: Int,
+        tags: [String],
+        createdAt: String?,
+        updatedAt: String?
     ) {
         self.id = id
         self.title = title
@@ -47,8 +88,16 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
         self.kind = kind
         self.sourceValue = sourceValue
         self.downloadURL = downloadURL
+        self.previewURL = previewURL
+        self.previewKind = previewKind
+        self.accentColor = accentColor
         self.thumbnailURL = thumbnailURL
+        self.featured = featured
+        self.installs = installs
+        self.downloads = downloads
         self.tags = tags
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 
     enum CodingKeys: String, CodingKey {
@@ -64,9 +113,20 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
         case url
         case downloadURL
         case download
+        case previewURL
+        case preview
+        case previewKind
+        case accentColor
         case thumbnailURL
         case thumbnail
+        case featured
+        case installs
+        case downloads
         case tags
+        case createdAt
+        case updatedAt
+        case created_at
+        case updated_at
     }
 
     init(from decoder: Decoder) throws {
@@ -92,10 +152,43 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
         downloadURL = try container.decodeIfPresent(String.self, forKey: .downloadURL)
             ?? container.decodeIfPresent(String.self, forKey: .download)
 
+        previewURL = try container.decodeIfPresent(String.self, forKey: .previewURL)
+            ?? container.decodeIfPresent(String.self, forKey: .preview)
+            ?? container.decodeIfPresent(String.self, forKey: .thumbnailURL)
+            ?? container.decodeIfPresent(String.self, forKey: .thumbnail)
+            ?? downloadURL
+
+        let previewKindRaw = try container.decodeIfPresent(String.self, forKey: .previewKind)
+        if let previewKindRaw,
+           let parsedPreviewKind = MarketplacePreviewKind(rawValue: previewKindRaw.lowercased()) {
+            previewKind = parsedPreviewKind
+        } else {
+            switch kind {
+            case .video:
+                previewKind = .video
+            case .web:
+                previewKind = .web
+            case .gradient, .shader:
+                previewKind = .image
+            }
+        }
+
+        accentColor = try container.decodeIfPresent(String.self, forKey: .accentColor)
+
         thumbnailURL = try container.decodeIfPresent(String.self, forKey: .thumbnailURL)
             ?? container.decodeIfPresent(String.self, forKey: .thumbnail)
+            ?? previewURL
+
+        featured = try container.decodeIfPresent(Bool.self, forKey: .featured) ?? false
+        installs = try container.decodeIfPresent(Int.self, forKey: .installs) ?? 0
+        downloads = try container.decodeIfPresent(Int.self, forKey: .downloads) ?? 0
 
         tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+            ?? container.decodeIfPresent(String.self, forKey: .created_at)
+        updatedAt = try container.decodeIfPresent(String.self, forKey: .updatedAt)
+            ?? container.decodeIfPresent(String.self, forKey: .updated_at)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -107,13 +200,33 @@ struct MarketplaceWallpaper: Identifiable, Hashable, Codable {
         try container.encode(kind.rawValue, forKey: .kind)
         try container.encode(sourceValue, forKey: .sourceValue)
         try container.encode(downloadURL, forKey: .downloadURL)
+        try container.encode(previewURL, forKey: .previewURL)
+        try container.encode(previewKind.rawValue, forKey: .previewKind)
+        try container.encode(accentColor, forKey: .accentColor)
         try container.encode(thumbnailURL, forKey: .thumbnailURL)
+        try container.encode(featured, forKey: .featured)
+        try container.encode(installs, forKey: .installs)
+        try container.encode(downloads, forKey: .downloads)
         try container.encode(tags, forKey: .tags)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
+    var bestPreviewURL: String? {
+        previewURL ?? thumbnailURL ?? downloadURL ?? sourceValue
     }
 }
 
 struct MarketplaceFeedEnvelope: Codable {
     let wallpapers: [MarketplaceWallpaper]
+}
+
+struct MarketplaceCatalogEnvelope: Codable {
+    let items: [MarketplaceWallpaper]
+    let page: Int?
+    let perPage: Int?
+    let total: Int?
+    let hasMore: Bool?
 }
 
 struct MarketplaceUploadInput {
@@ -122,6 +235,10 @@ struct MarketplaceUploadInput {
     var summary: String
     var kind: CommunityWallpaperKind
     var sourceValue: String
+    var tags: String
+    var thumbnailURL: String
+    var previewURL: String
+    var accentColor: String
     var fileURL: URL?
 
     static let empty = MarketplaceUploadInput(
@@ -130,6 +247,10 @@ struct MarketplaceUploadInput {
         summary: "",
         kind: .web,
         sourceValue: "",
+        tags: "",
+        thumbnailURL: "",
+        previewURL: "",
+        accentColor: "",
         fileURL: nil
     )
 }

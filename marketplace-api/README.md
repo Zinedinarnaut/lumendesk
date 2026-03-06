@@ -1,6 +1,6 @@
 # LumenDesk Marketplace API
 
-Vercel-hosted TypeScript API for LumenDesk marketplace feeds and uploads.
+Vercel-hosted TypeScript API for LumenDesk marketplace feeds, uploads, and preview metadata.
 
 ## Stack
 
@@ -12,10 +12,22 @@ Vercel-hosted TypeScript API for LumenDesk marketplace feeds and uploads.
 ## Endpoints
 
 - `GET /api/health`
+- `GET /api/marketplace`
 - `GET /api/wallpapers`
+- `GET /api/wallpapers/:id`
+- `POST /api/wallpapers/:id/install`
 - `GET /wallpapers.json`
 - `POST /api/upload`
 - `POST /upload`
+
+`GET /api/marketplace` supports:
+
+- `q` (search title/author/summary)
+- `kind` (`web|video|gradient|shader`)
+- `tag`
+- `featured` (`true|false`)
+- `sort` (`featured|popular|latest`)
+- `page`, `perPage`
 
 ## Environment Variables
 
@@ -25,6 +37,7 @@ Vercel-hosted TypeScript API for LumenDesk marketplace feeds and uploads.
 - `APPLE_BUNDLE_ID` (recommended for audience check)
 - `APPLE_SERVICE_ID` (optional additional audience)
 - `APPLE_CLIENT_ID` (optional additional audience)
+- `MARKETPLACE_ADMIN_TOKEN` (optional; enables privileged upload flags like `featured` and custom `status`)
 
 ## Local Run
 

@@ -2,10 +2,21 @@ import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { AuthorizationError, authenticateUploadRequest } from "../../../lib/auth";
 import { ensureSchema, insertWallpaper } from "../../../lib/db";
-import { mapRowToWallpaper, normalizeKind, parseTags, sanitizeText } from "../../../lib/models";
+import {
+  mapRowToWallpaper,
+  normalizeKind,
+  normalizePreviewKind,
+  parseBoolean,
+  parseTags,
+  sanitizeHexColor,
+  sanitizeText,
+  sanitizeURL
+} from "../../../lib/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const VALID_STATUSES = new Set(["draft", "published", "hidden"]);
 
 function sanitizeFileName(value: string): string {
   const cleaned = value
@@ -32,8 +43,32 @@ function extensionForFile(file: File): string {
   return "bin";
 }
 
+function isAdminRequest(request: Request): boolean {
+  const expected = process.env.MARKETPLACE_ADMIN_TOKEN?.trim();
+  if (!expected || expected.length === 0) {
+    return false;
+  }
+
+  const provided = request.headers.get("x-marketplace-admin")?.trim();
+  return provided === expected;
+}
+
+function normalizeStatus(raw: string | null, admin: boolean): "draft" | "published" | "hidden" {
+  if (!admin || !raw) {
+    return "published";
+  }
+
+  const value = raw.trim().toLowerCase();
+  if (VALID_STATUSES.has(value)) {
+    return value as "draft" | "published" | "hidden";
+  }
+
+  return "published";
+}
+
 export async function POST(request: Request) {
   try {
+    const isAdmin = isAdminRequest(request);
     const auth = await authenticateUploadRequest(request);
     await ensureSchema();
 
@@ -44,10 +79,16 @@ export async function POST(request: Request) {
     const summary = sanitizeText(form.get("summary"));
     const kind = normalizeKind(form.get("kind"));
     const tags = parseTags(form.get("tags"));
-    const thumbnailURL = sanitizeText(form.get("thumbnailURL"));
+    const thumbnailURL = sanitizeURL(form.get("thumbnailURL")) ?? sanitizeURL(form.get("thumbnail"));
+    const accentColor = sanitizeHexColor(form.get("accentColor"));
+    const featuredFlag = parseBoolean(form.get("featured"));
+    const featured = isAdmin && featuredFlag === true;
+    const status = normalizeStatus(sanitizeText(form.get("status")), isAdmin);
 
     let sourceValue = sanitizeText(form.get("sourceValue"));
     let downloadURL: string | null = null;
+    let previewURL = sanitizeURL(form.get("previewURL")) ?? thumbnailURL;
+    let previewKind = normalizePreviewKind(form.get("previewKind"));
 
     if (!title || !author || !kind) {
       return NextResponse.json(
@@ -70,8 +111,25 @@ export async function POST(request: Request) {
         if (!sourceValue) {
           sourceValue = blob.url;
         }
+        if (!previewURL) {
+          previewURL = blob.url;
+        }
+        if (previewKind === "image" || previewKind === "none") {
+          previewKind = "video";
+        }
       } else if (sourceValue) {
-        downloadURL = sourceValue;
+        const remote = sanitizeURL(sourceValue);
+        if (!remote) {
+          return NextResponse.json(
+            { error: "Video sourceValue must be a valid http(s) URL." },
+            { status: 400 }
+          );
+        }
+        sourceValue = remote;
+        downloadURL = remote;
+        if (!previewURL) {
+          previewURL = remote;
+        }
       } else {
         return NextResponse.json(
           { error: "Video upload requires either file or sourceValue." },
@@ -80,11 +138,21 @@ export async function POST(request: Request) {
       }
     }
 
-    if (kind === "web" && !sourceValue) {
-      return NextResponse.json(
-        { error: "Web wallpapers require sourceValue." },
-        { status: 400 }
-      );
+    if (kind === "web") {
+      const webURL = sanitizeURL(sourceValue);
+      if (!webURL) {
+        return NextResponse.json(
+          { error: "Web wallpapers require a valid sourceValue URL." },
+          { status: 400 }
+        );
+      }
+      sourceValue = webURL;
+      if (!previewURL) {
+        previewURL = webURL;
+      }
+      if (previewKind === "image" || previewKind === "none") {
+        previewKind = "web";
+      }
     }
 
     if ((kind === "gradient" || kind === "shader") && !sourceValue) {
@@ -94,6 +162,10 @@ export async function POST(request: Request) {
       );
     }
 
+    if ((kind === "gradient" || kind === "shader") && !previewURL) {
+      previewKind = "image";
+    }
+
     const row = await insertWallpaper({
       title,
       author,
@@ -101,8 +173,13 @@ export async function POST(request: Request) {
       kind,
       sourceValue,
       downloadURL,
+      previewURL,
+      previewKind,
+      accentColor,
       thumbnailURL,
+      featured,
       tags,
+      status,
       createdBy: auth?.subject ?? null
     });
 
