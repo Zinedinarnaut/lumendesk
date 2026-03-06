@@ -1,0 +1,29 @@
+name: LumenDesk
+options:
+  minimumXcodeGenVersion: 2.38.0
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    MACOSX_DEPLOYMENT_TARGET: 14.0
+targets:
+  LumenDesk:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/LumenDesk
+    dependencies:
+      - sdk: AppKit.framework
+      - sdk: AVFoundation.framework
+      - sdk: WebKit.framework
+      - sdk: IOKit.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: ServiceManagement.framework
+    settings:
+      base:
+        PRODUCT_NAME: LumenDesk
+        PRODUCT_BUNDLE_IDENTIFIER: com.lumendesk.desktop
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Config/Info.plist
